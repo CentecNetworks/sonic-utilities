@@ -518,6 +518,7 @@ def remove(image):
         sys.exit(1)
     # TODO: check if image is next boot or default boot and fix these
     bootloader.remove_image(image)
+    os.system("/bin/sh /usr/local/bin/sonic_sync_spi_env.sh")
 
 
 # Retrieve version from binary image file and print to screen
