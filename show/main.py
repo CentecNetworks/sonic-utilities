@@ -402,8 +402,9 @@ def event_counters():
 @cli.command()
 @click.argument('ipaddress', required=False)
 @click.option('-if', '--iface')
+@click.option('--exclude-vlan', is_flag=True, help="Exclude vlan information")
 @click.option('--verbose', is_flag=True, help="Enable verbose output")
-def arp(ipaddress, iface, verbose):
+def arp(ipaddress, iface, exclude_vlan, verbose):
     """Show IP ARP table"""
     cmd = ['nbrshow', '-4']
 
@@ -418,6 +419,9 @@ def arp(ipaddress, iface, verbose):
 
         cmd += ['-if', str(iface)]
 
+    if exclude_vlan is not None:
+        cmd += ' --exclude-vlan'
+
     run_command(cmd, display_cmd=verbose)
 
 #
@@ -427,8 +431,9 @@ def arp(ipaddress, iface, verbose):
 @cli.command()
 @click.argument('ip6address', required=False)
 @click.option('-if', '--iface')
+@click.option('--exclude-vlan', is_flag=True, help="Exclude vlan information")
 @click.option('--verbose', is_flag=True, help="Enable verbose output")
-def ndp(ip6address, iface, verbose):
+def ndp(ip6address, iface, exclude_vlan, verbose):
     """Show IPv6 Neighbour table"""
     cmd = ['nbrshow', '-6']
 
@@ -437,6 +442,9 @@ def ndp(ip6address, iface, verbose):
 
     if iface is not None:
         cmd += ['-if', str(iface)]
+
+    if exclude_vlan is not None:
+        cmd += ' --exclude-vlan'
 
     run_command(cmd, display_cmd=verbose)
 
