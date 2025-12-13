@@ -320,8 +320,9 @@ def display_bgp_summary(bgp_summary, af):
             "Peers {}, using {} KiB of memory" .format(
                 bgp_summary['peerCount'],
                 bgp_summary['peerMemory']))
-        click.echo("Peer groups {}, using {} bytes of memory" .format(
-            bgp_summary['peerGroupCount'], bgp_summary['peerGroupMemory']))
+        if 'peerGroupCount' in bgp_summary.keys() and 'peerGroupMemory' in bgp_summary.keys():
+            click.echo("Peer groups {}, using {} bytes of memory" .format(
+                bgp_summary['peerGroupCount'], bgp_summary['peerGroupMemory']))
         click.echo("\n")
 
         click.echo(tabulate(natsorted(bgp_summary['peers']), headers=headers))
@@ -353,10 +354,12 @@ def process_bgp_summary_json(bgp_summary, cmd_output, device, has_bgp_neighbors=
                 'ribCount', 0) + cmd_output['ribCount']
             bgp_summary['ribMemory'] = bgp_summary.get(
                 'ribMemory', 0) + cmd_output['ribMemory']
-            bgp_summary['peerGroupCount'] = bgp_summary.get(
-                'peerGroupCount', 0) + cmd_output['peerGroupCount']
-            bgp_summary['peerGroupMemory'] = bgp_summary.get(
-                'peerGroupMemory', 0) + cmd_output['peerGroupMemory']
+            if 'peerGroupCount' in bgp_summary.keys():
+                bgp_summary['peerGroupCount'] = bgp_summary.get(
+                    'peerGroupCount', 0) + cmd_output['peerGroupCount']
+            if 'peerGroupMemory' in bgp_summary.keys():
+                bgp_summary['peerGroupMemory'] = bgp_summary.get(
+                    'peerGroupMemory', 0) + cmd_output['peerGroupMemory']
         else:
             # when there are no bgp neighbors, all values are zero
             bgp_summary['peerCount'] = bgp_summary.get(
@@ -367,10 +370,12 @@ def process_bgp_summary_json(bgp_summary, cmd_output, device, has_bgp_neighbors=
                 'peerCount', 0) + 0
             bgp_summary['ribMemory'] = bgp_summary.get(
                 'peerCount', 0) + 0
-            bgp_summary['peerGroupCount'] = bgp_summary.get(
-                'peerCount', 0) + 0
-            bgp_summary['peerGroupMemory'] = bgp_summary.get(
-                'peerCount', 0) + 0
+            if 'peerGroupCount' in bgp_summary.keys():
+                bgp_summary['peerGroupCount'] = bgp_summary.get(
+                    'peerCount', 0) + 0
+            if 'peerGroupMemory' in bgp_summary.keys():
+                bgp_summary['peerGroupMemory'] = bgp_summary.get(
+                    'peerCount', 0) + 0
 
         # store instance level field is seperate dict
         router_info = {}
