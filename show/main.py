@@ -420,7 +420,7 @@ def arp(ipaddress, iface, exclude_vlan, verbose):
         cmd += ['-if', str(iface)]
 
     if exclude_vlan is not None:
-        cmd += ' --exclude-vlan'
+        cmd += ['--exclude-vlan']
 
     run_command(cmd, display_cmd=verbose)
 
@@ -444,7 +444,7 @@ def ndp(ip6address, iface, exclude_vlan, verbose):
         cmd += ['-if', str(iface)]
 
     if exclude_vlan is not None:
-        cmd += ' --exclude-vlan'
+        cmd += ['--exclude-vlan']
 
     run_command(cmd, display_cmd=verbose)
 
