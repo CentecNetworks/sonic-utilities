@@ -56,7 +56,7 @@ class AbbreviationGroup(click.Group):
             else:
                 return click.Group.get_command(self, ctx, shortest)
 
-            ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
+            print('Too many matches: %s' % ', '.join(sorted(matches)))
 
 
 # This is from the aliases example:
@@ -116,7 +116,7 @@ class AliasedGroup(click.Group):
             return None
         elif len(matches) == 1:
             return click.Group.get_command(self, ctx, matches[0])
-        ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
+        print('Too many matches: %s' % ', '.join(sorted(matches)))
 
 
 class InterfaceAliasConverter(object):
