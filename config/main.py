@@ -2472,6 +2472,12 @@ def remove_portchannel(ctx, portchannel_name):
         if len([(k, v) for k, v in db.get_table('PORTCHANNEL_MEMBER') if k == portchannel_name]) != 0: # TODO: MISSING CONSTRAINT IN YANG MODEL
             ctx.fail("Error: Portchannel {} contains members. Remove members before deleting Portchannel!".format(portchannel_name))
 
+        intf_table = db.get_table('PORTCHANNEL_INTERFACE')
+        for intf_key in intf_table:
+            if ((type(intf_key) is str and intf_key == portchannel_name) or
+                (type(intf_key) is tuple and intf_key[0] == portchannel_name)):
+                ctx.fail("{} has interface ip configured, remove IP addresses assigned before deleting Portchannel!".format(portchannel_name))
+
     try:
         db.set_entry('PORTCHANNEL', portchannel_name, None)
     except JsonPatchConflict:
