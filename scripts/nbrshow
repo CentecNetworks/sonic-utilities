@@ -58,6 +58,7 @@ class NbrBase(object):
         self.cmd = cmd
         self.err = None
         self.nbrdata = []
+        self.bridge_mac_list = []
         return
 
     def fetch_fdb_data(self):
@@ -66,7 +67,6 @@ class NbrBase(object):
             @Todo, this code can be reused
         """
         self.db.connect(self.db.ASIC_DB)
-        self.bridge_mac_list = []
         vlan_id_dict = {}
 
         fdb_str = self.db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:*")
