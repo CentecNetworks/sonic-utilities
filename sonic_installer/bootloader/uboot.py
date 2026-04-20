@@ -20,46 +20,75 @@ from .onie import OnieInstallerBootloader
 class UbootBootloader(OnieInstallerBootloader):
 
     NAME = 'uboot'
+    DEFAULT_IMAGE_SLOTS = (1, 2)
+    ROOTFS_IMAGE_SLOTS = {
+        'CTC-SONIC-1': (1, 3),
+        'CTC-SONIC-2': (2, 4),
+    }
 
-    def get_installed_images(self):
+    def _get_fw_env(self, name):
+        proc = subprocess.Popen(["/usr/bin/fw_printenv", "-n", name], text=True, stdout=subprocess.PIPE)
+        (out, _) = proc.communicate()
+        return out.rstrip()
+
+    def _get_current_rootfs_label(self):
+        try:
+            with open('/proc/cmdline', 'r', encoding='utf-8') as cmdline:
+                match = re.search(r'root=LABEL=([^\s]+)', cmdline.read())
+        except OSError:
+            return None
+
+        if match:
+            return match.group(1)
+        return None
+
+    def _get_image_slots(self):
+        rootfs_label = self._get_current_rootfs_label()
+        return self.ROOTFS_IMAGE_SLOTS.get(rootfs_label, self.DEFAULT_IMAGE_SLOTS)
+
+    def _get_image_entries(self):
         images = []
-        proc = subprocess.Popen(["/usr/bin/fw_printenv", "-n", "sonic_version_1"], text=True, stdout=subprocess.PIPE)
-        (out, _) = proc.communicate()
-        image = out.rstrip()
-        if IMAGE_PREFIX in image:
-            images.append(image)
-        proc = subprocess.Popen(["/usr/bin/fw_printenv", "-n", "sonic_version_2"], text=True, stdout=subprocess.PIPE)
-        (out, _) = proc.communicate()
-        image = out.rstrip()
-        if IMAGE_PREFIX in image:
-            images.append(image)
+        for slot in self._get_image_slots():
+            image = self._get_fw_env(f"sonic_version_{slot}")
+            if IMAGE_PREFIX in image:
+                images.append((slot, image))
         return images
 
+    def get_installed_images(self):
+        return [image for _, image in self._get_image_entries()]
+
     def get_next_image(self):
-        images = self.get_installed_images()
-        proc = subprocess.Popen(["/usr/bin/fw_printenv", "-n", "boot_next"], text=True, stdout=subprocess.PIPE)
-        (out, _) = proc.communicate()
-        image = out.rstrip()
-        if "sonic_image_2" in image and len(images) == 2:
-            next_image_index = 1
-        else:
-            next_image_index = 0
-        return images[next_image_index]
+        images = self._get_image_entries()
+        if not images:
+            return ''
+
+        next_slot = None
+        for env_name in ('boot_once', 'boot_next'):
+            image = self._get_fw_env(env_name)
+            match = re.search(r'sonic_image_(\d+)', image)
+            if match:
+                next_slot = int(match.group(1))
+                break
+
+        if next_slot is not None:
+            for slot, image in images:
+                if slot == next_slot:
+                    return image
+
+        return images[0][1]
 
     def set_default_image(self, image):
-        images = self.get_installed_images()
-        if image in images[0]:
-            run_command(['/usr/bin/fw_setenv', 'boot_next', "run sonic_image_1"])
-        elif image in images[1]:
-            run_command(['/usr/bin/fw_setenv', 'boot_next', "run sonic_image_2"])
+        for slot, installed_image in self._get_image_entries():
+            if image == installed_image:
+                run_command(['/usr/bin/fw_setenv', 'boot_next', f"run sonic_image_{slot}"])
+                break
         return True
 
     def set_next_image(self, image):
-        images = self.get_installed_images()
-        if image in images[0]:
-            run_command(['/usr/bin/fw_setenv', 'boot_once', "run sonic_image_1"])
-        elif image in images[1]:
-            run_command(['/usr/bin/fw_setenv', 'boot_once', "run sonic_image_2"])
+        for slot, installed_image in self._get_image_entries():
+            if image == installed_image:
+                run_command(['/usr/bin/fw_setenv', 'boot_once', f"run sonic_image_{slot}"])
+                break
         return True
 
     def install_image(self, image_path):
@@ -67,13 +96,21 @@ class UbootBootloader(OnieInstallerBootloader):
 
     def remove_image(self, image):
         click.echo('Updating next boot ...')
-        images = self.get_installed_images()
-        if image in images[0]:
-            run_command(['/usr/bin/fw_setenv', 'boot_next', "run sonic_image_2"])
-            run_command(['/usr/bin/fw_setenv', 'sonic_version_1', "NONE"])
-        elif image in images[1]:
-            run_command(['/usr/bin/fw_setenv', 'boot_next', "run sonic_image_1"])
-            run_command(['/usr/bin/fw_setenv', 'sonic_version_2', "NONE"])
+        image_entries = self._get_image_entries()
+        remove_slot = None
+        fallback_slot = None
+
+        for slot, installed_image in image_entries:
+            if image == installed_image and remove_slot is None:
+                remove_slot = slot
+            elif fallback_slot is None:
+                fallback_slot = slot
+
+        if remove_slot is not None:
+            if fallback_slot is not None:
+                run_command(['/usr/bin/fw_setenv', 'boot_next', f"run sonic_image_{fallback_slot}"])
+            run_command(['/usr/bin/fw_setenv', f'sonic_version_{remove_slot}', "NONE"])
+
         image_dir = image.replace(IMAGE_PREFIX, IMAGE_DIR_PREFIX, 1)
         click.echo('Removing image root filesystem...')
         subprocess.call(['rm','-rf', HOST_PATH + '/' + image_dir])

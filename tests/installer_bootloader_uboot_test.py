@@ -1,3 +1,4 @@
+import io
 import os
 from unittest.mock import Mock, patch, call
 
@@ -25,7 +26,7 @@ def test_set_default_image(mock_run_cmd):
     expected_call0, expected_call1 = [call(subcmd + image0)], [call(subcmd + image1)]
 
     bootloader = uboot.UbootBootloader()
-    bootloader.get_installed_images = Mock(return_value=installed_images)
+    bootloader._get_image_entries = Mock(return_value=[(1, installed_images[0]), (2, installed_images[1])])
     bootloader.set_default_image(installed_images[0])
     assert mock_run_cmd.call_args_list == expected_call0
 
@@ -40,7 +41,7 @@ def test_set_next_image(mock_run_cmd):
     expected_call0, expected_call1 = [call(subcmd + image0)], [call(subcmd + image1)]
 
     bootloader = uboot.UbootBootloader()
-    bootloader.get_installed_images = Mock(return_value=installed_images)
+    bootloader._get_image_entries = Mock(return_value=[(1, installed_images[0]), (2, installed_images[1])])
     bootloader.set_next_image(installed_images[0])
     assert mock_run_cmd.call_args_list == expected_call0
 
@@ -68,7 +69,7 @@ def test_remove_image(run_command_patch):
     ]
 
     bootloader = uboot.UbootBootloader()
-    bootloader.get_installed_images = Mock(return_value=installed_images)
+    bootloader._get_image_entries = Mock(return_value=[(1, installed_images[0]), (2, installed_images[1])])
 
     # Verify rm command was executed with image path
     bootloader.remove_image(installed_images[0])
@@ -103,7 +104,7 @@ def test_get_next_image(run_command_patch, popen_patch):
     popen_patch.return_value = MockProc()
 
     bootloader = uboot.UbootBootloader()
-    bootloader.get_installed_images = Mock(return_value=installed_images)
+    bootloader._get_image_entries = Mock(return_value=[(1, installed_images[0]), (2, installed_images[1])])
 
     bootloader.set_default_image(installed_images[1])
     
@@ -111,6 +112,58 @@ def test_get_next_image(run_command_patch, popen_patch):
     next_image=bootloader.get_next_image()
 
     assert next_image == installed_images[1]
+
+@patch("sonic_installer.bootloader.uboot.subprocess.Popen")
+def test_get_installed_images_by_rootfs_label(popen_patch):
+    env = {
+        'sonic_version_1': f'{uboot.IMAGE_PREFIX}A\n',
+        'sonic_version_2': f'{uboot.IMAGE_PREFIX}B\n',
+        'sonic_version_3': f'{uboot.IMAGE_PREFIX}C\n',
+        'sonic_version_4': 'NONE\n'
+    }
+
+    class MockProc():
+        def __init__(self, value):
+            self.value = value
+
+        def communicate(self):
+            return self.value, None
+
+    popen_patch.side_effect = lambda args, **kwargs: MockProc(env.get(args[-1], 'NONE\n'))
+    bootloader = uboot.UbootBootloader()
+
+    with patch("builtins.open", return_value=io.StringIO("root=LABEL=CTC-SONIC-1 loop=/host/image-a/fs.squashfs")):
+        assert bootloader.get_installed_images() == [f'{uboot.IMAGE_PREFIX}A', f'{uboot.IMAGE_PREFIX}C']
+
+    with patch("builtins.open", return_value=io.StringIO("root=LABEL=CTC-SONIC-2 loop=/host/image-b/fs.squashfs")):
+        assert bootloader.get_installed_images() == [f'{uboot.IMAGE_PREFIX}B']
+
+@patch("sonic_installer.bootloader.uboot.subprocess.Popen")
+@patch("sonic_installer.bootloader.uboot.run_command")
+def test_set_default_image_uses_matching_slot_group(run_command_patch, popen_patch):
+    env = {
+        'sonic_version_1': f'{uboot.IMAGE_PREFIX}A\n',
+        'sonic_version_2': f'{uboot.IMAGE_PREFIX}B\n',
+        'sonic_version_3': f'{uboot.IMAGE_PREFIX}C\n',
+        'sonic_version_4': 'NONE\n'
+    }
+
+    class MockProc():
+        def __init__(self, value):
+            self.value = value
+
+        def communicate(self):
+            return self.value, None
+
+    popen_patch.side_effect = lambda args, **kwargs: MockProc(env.get(args[-1], 'NONE\n'))
+
+    bootloader = uboot.UbootBootloader()
+    with patch("builtins.open", return_value=io.StringIO("root=LABEL=CTC-SONIC-1 loop=/host/image-a/fs.squashfs")):
+        bootloader.set_default_image(f'{uboot.IMAGE_PREFIX}C')
+
+    assert run_command_patch.call_args_list == [
+        call(['/usr/bin/fw_setenv', 'boot_next', 'run sonic_image_3'])
+    ]
 
 @patch("sonic_installer.bootloader.uboot.subprocess.Popen")
 @patch("sonic_installer.bootloader.uboot.run_command")
