@@ -414,10 +414,10 @@ def process_bgp_summary_json(bgp_summary, cmd_output, device, has_bgp_neighbors=
 
         # store instance level field is seperate dict
         router_info = {}
-        router_info['router_id'] = cmd_output['routerId']
-        router_info['vrf'] = cmd_output['vrfId']
-        router_info['as'] = cmd_output['as'] if has_bgp_neighbors else cmd_output['localAS']
-        router_info['tbl_ver'] = cmd_output['tableVersion']
+        router_info['router_id'] = cmd_output.get('routerId', 0)
+        router_info['vrf'] = cmd_output.get('vrfId', 0)
+        router_info['as'] = cmd_output.get('as', 0) if has_bgp_neighbors else cmd_output.get('localAS', 0)
+        router_info['tbl_ver'] = cmd_output.get('tableVersion', 0)
         bgp_summary.setdefault('router_info', []).append(
             {device.current_namespace: router_info})
 
