@@ -9318,6 +9318,15 @@ def enable(ctx):
     """Enable IPv6 on all interfaces """
 
 #
+# 'all' command ('config ipv6 enable all')
+#
+@enable.command('all')
+@click.pass_context
+def enable_ipv6(ctx):
+    """Enable IPv6 on all interfaces """
+    clicommon.run_command(['sudo', 'sysctl', '-w', 'net.ipv6.conf.all.disable_ipv6=0'])
+
+#
 # 'link-local' command ('config ipv6 enable link-local')
 #
 @enable.command('link-local')
@@ -9356,6 +9365,15 @@ def enable_link_local(ctx):
 @click.pass_context
 def disable(ctx):
     """Disable IPv6 on all interfaces """
+
+#
+# 'all' command ('config ipv6 disable all')
+#
+@disable.command('all')
+@click.pass_context
+def disable_ipv6(ctx):
+    """Disable IPv6 on all interfaces """
+    clicommon.run_command(['sudo', 'sysctl', '-w', 'net.ipv6.conf.all.disable_ipv6=1'])
 
 #
 # 'link-local' command ('config ipv6 disable link-local')
