@@ -4,6 +4,6 @@
     },
     "DEVICE_METADATA|localhost": {
         "synchronous_mode": "enable",
-        "docker_routing_config_mode": "separated"
+        "docker_routing_config_mode": "split-unified"
     }
 }
