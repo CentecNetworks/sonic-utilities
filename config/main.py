@@ -1925,6 +1925,10 @@ def save(db, filename):
             config_db_file.flush()
             os.fsync(config_db_file.fileno())
 
+    # save frr configuration to default file /etc/frr/frr.conf
+    cmd = "write"
+    bgp_util.run_bgp_command(cmd)
+
 @config.command()
 @click.option('-y', '--yes', is_flag=True)
 @click.argument('filename', required=False)
