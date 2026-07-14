@@ -438,7 +438,7 @@ def arp(ipaddress, iface, exclude_vlan, verbose):
 
         cmd += ['-if', str(iface)]
 
-    if exclude_vlan is not None:
+    if exclude_vlan is True:
         cmd += ['--exclude-vlan']
 
     run_command(cmd, display_cmd=verbose)
