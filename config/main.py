@@ -6457,6 +6457,11 @@ def bind(ctx, interface_name, vrf_name):
             if (config_db.get_entry(table_name, interface_name).get('vrf_name') == vrf_name):
                 return
 
+    # interface is vlan member
+    vlan_id = clicommon.get_port_vlan_member_vid(config_db, interface_name)
+    if vlan_id is not None:
+        ctx.fail("Interface {} already configured as {} member. Please remove it first.".format(interface_name, vlan_id))
+
     # Clean ip addresses if interface configured
     interface_addresses = get_interface_ipaddresses(config_db, interface_name)
     for ip_address in interface_addresses:

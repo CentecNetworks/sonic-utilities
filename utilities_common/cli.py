@@ -308,6 +308,17 @@ def is_port_vlan_member(config_db, port, vlan):
     return False
 
 
+def get_port_vlan_member_vid(config_db, port):
+    """Get port is a member of vlan id"""
+
+    vlan_ports_data = config_db.get_table('VLAN_MEMBER')
+    for key in vlan_ports_data:
+        if key[1] == port:
+            return key[0]
+
+    return None
+
+
 def vlan_range_list(ctx, vid_range: str) -> list:
 
     vid1, vid2 = map(int, vid_range.split("-"))
