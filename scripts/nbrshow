@@ -50,6 +50,7 @@ class NbrBase(object):
 
     def __init__(self, cmd, exclude_vlan):
         super(NbrBase, self).__init__()
+        self.bridge_mac_list = []
         if exclude_vlan == False:
             self.db = SonicV2Connector(host="127.0.0.1")
             self.if_name_map, self.if_oid_map = port_util.get_interface_oid_map(self.db)
@@ -58,7 +59,6 @@ class NbrBase(object):
         self.cmd = cmd
         self.err = None
         self.nbrdata = []
-        self.bridge_mac_list = []
         return
 
     def fetch_fdb_data(self):
