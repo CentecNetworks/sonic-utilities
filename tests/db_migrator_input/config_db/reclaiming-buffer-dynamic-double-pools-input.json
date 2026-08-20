@@ -123,7 +123,7 @@
         "bgp_asn": "65100",
         "buffer_model": "dynamic",
         "deployment_id": "1",
-        "docker_routing_config_mode": "separated"
+        "docker_routing_config_mode": "split-unified"
     },
     "PORT|Ethernet0": {
         "lanes": "0,1,2,3",

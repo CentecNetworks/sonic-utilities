@@ -1093,7 +1093,7 @@
     "DEVICE_METADATA|localhost": {
         "hwsku": "ACS-MSN3800",
         "default_bgp_status": "up",
-        "docker_routing_config_mode": "separated",
+        "docker_routing_config_mode": "split-unified",
         "region": "None",
         "hostname": "sonic",
         "platform": "x86_64-mlnx_msn3800-r0",

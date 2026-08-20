@@ -957,7 +957,7 @@
         "default_pfcwd_status": "disable",
         "bgp_asn": "65100",
         "deployment_id": "1",
-        "docker_routing_config_mode": "separated",
+        "docker_routing_config_mode": "split-unified",
         "cloudtype": "None"
     },
     "PORT|Ethernet0": {
