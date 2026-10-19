@@ -1390,6 +1390,7 @@ def link_local_mode(verbose):
                 else:
                     body.append([port, 'Disabled'])
 
+    body = natsorted(body, key=lambda x: x[0])
     click.echo(tabulate(body, header, tablefmt="grid"))
 
 #
