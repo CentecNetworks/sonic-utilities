@@ -7104,7 +7104,7 @@ def enable(ctx):
     except SystemExit as e:
         ctx.fail("Unable to check sflow status {}".format(e))
 
-    if out != "active":
+    if out.strip() != "active":
         log.log_info("sflow service is not enabled. Starting sflow docker...")
         clicommon.run_command(['sudo', 'systemctl', 'enable', 'sflow'])
         clicommon.run_command(['sudo', 'systemctl', 'start', 'sflow'])
