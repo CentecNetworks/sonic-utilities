@@ -7535,6 +7535,10 @@ def enable(ctx):
 @click.pass_context
 def enable_ipv6(ctx):
     """Enable IPv6 on all interfaces """
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    config_db.mod_entry('DEVICE_METADATA', 'localhost', {'ipv6': 'enable'})
+
     clicommon.run_command(['sudo', 'sysctl', '-q', '-w', 'net.ipv6.conf.all.disable_ipv6=0'])
 
 #
@@ -7581,6 +7585,10 @@ def disable(ctx):
 @click.pass_context
 def disable_ipv6(ctx):
     """Disable IPv6 on all interfaces """
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    config_db.mod_entry('DEVICE_METADATA', 'localhost', {'ipv6': 'disable'})
+
     clicommon.run_command(['sudo', 'sysctl', '-q', '-w', 'net.ipv6.conf.all.disable_ipv6=1'])
 
 #
