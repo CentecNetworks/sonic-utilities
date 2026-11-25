@@ -54,7 +54,7 @@ class NbrBase(object):
     HEADER = []
     NBR_COUNT = 0
 
-    def __init__(self, cmd, namespace=None):
+    def __init__(self, cmd, namespace=None, exclude_vlan):
         super(NbrBase, self).__init__()
         self.namespace = namespace
 
@@ -70,9 +70,10 @@ class NbrBase(object):
         else:
             self.db = SonicV2Connector(host="127.0.0.1")
 
-        self.if_name_map, self.if_oid_map = port_util.get_interface_oid_map(self.db)
-        self.if_br_oid_map = port_util.get_bridge_port_map(self.db)
-        self.fetch_fdb_data()
+        if exclude_vlan == False:
+            self.if_name_map, self.if_oid_map = port_util.get_interface_oid_map(self.db)
+            self.if_br_oid_map = port_util.get_bridge_port_map(self.db)
+            self.fetch_fdb_data()
         self.cmd = cmd
         self.err = None
         self.nbrdata = []
@@ -85,6 +86,7 @@ class NbrBase(object):
         """
         self.db.connect(self.db.ASIC_DB)
         self.bridge_mac_list = []
+        vlan_id_dict = {}
 
         fdb_str = self.db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:*")
         if not fdb_str:
@@ -112,14 +114,19 @@ class NbrBase(object):
             if 'vlan' in fdb:
                 vlan_id = fdb["vlan"]
             elif 'bvid' in fdb:
+                bv_id = fdb["bvid"]
                 try:
-                    vlan_id = port_util.get_vlan_id_from_bvid(self.db, fdb["bvid"])
-                    if vlan_id is None:
-                        # the case could be happened if the FDB entry has created with linking to
-                        # default VLAN 1, which is not present in the system
-                        continue
+                    if bv_id in vlan_id_dict.keys():
+                        vlan_id = vlan_id_dict[bv_id]
+                    else:
+                        vlan_id = port_util.get_vlan_id_from_bvid(self.db, bv_id)
+                        if vlan_id is None:
+                            # the case could be happened if the FDB entry has created with linking to
+                            # default VLAN 1, which is not present in the system
+                            continue
+                        vlan_id_dict[bv_id] = vlan_id
                 except Exception:
-                    vlan_id = fdb["bvid"]
+                    vlan_id = bv_id
                     print("Failed to get Vlan id for bvid {}\n".format(fdb["bvid"]))
             self.bridge_mac_list.append((int(vlan_id),) + (fdb["mac"],) + (if_name,))
 
@@ -187,8 +194,9 @@ class ArpShow(NbrBase):
 
     HEADER = ['Address', 'MacAddress', 'Iface', 'Vlan']
     CMD = ["/usr/sbin/arp", "-n"]
+    exclude_vlan = False
 
-    def __init__(self, ipaddr, iface, namespace=None):
+    def __init__(self, ipaddr, iface, namespace=None, exclude_vlan):
 
         cmd = list(self.CMD)
         if iface is not None:
@@ -197,7 +205,10 @@ class ArpShow(NbrBase):
         if ipaddr is not None:
             cmd += ['--', ipaddr]
 
-        NbrBase.__init__(self, cmd, namespace)
+        if exclude_vlan is not None:
+            self.exclude_vlan = exclude_vlan
+
+        NbrBase.__init__(self, cmd, namespace, self.exclude_vlan)
         return
 
     def display(self):
@@ -227,8 +238,9 @@ class NeighShow(NbrBase):
 
     HEADER = ['Address', 'MacAddress', 'Iface', 'Vlan', 'Status']
     CMD = ["/bin/ip", "-6", "neigh", "show"]
+    exclude_vlan = False
 
-    def __init__(self, ipaddr, iface, namespace=None):
+    def __init__(self, ipaddr, iface, namespace=None, exclude_vlan):
 
         cmd = list(self.CMD)
         if ipaddr is not None:
@@ -237,8 +249,11 @@ class NeighShow(NbrBase):
         if iface is not None:
             cmd += ['dev', iface]
 
+        if exclude_vlan is not None:
+            self.exclude_vlan = exclude_vlan
+
         self.iface = iface
-        NbrBase.__init__(self, cmd, namespace)
+        NbrBase.__init__(self, cmd, namespace, self.exclude_vlan)
         return
 
     def display(self):
@@ -282,6 +297,8 @@ def main():
                         help='Neighbor for a specific address', default=None)
     parser.add_argument('-if', '--iface', type=str,
                         help='Neighbors learned on specific L3 interface', default=None)
+    parser.add_argument('--exclude-vlan', action='store_true',
+                        help='Exclude vlan information')
     parser.add_argument('v', help='IP Version -4 or -6')
     parser = multi_asic_util.multi_asic_args(parser)
 
@@ -300,10 +317,10 @@ def main():
             namespace = ns if ns != constants.DEFAULT_NAMESPACE else None
 
             if (args.v == '-6'):
-                neigh = NeighShow(args.ipaddr, args.iface, namespace)
+                neigh = NeighShow(args.ipaddr, args.iface, namespace, args.exclude_vlan)
                 neigh.display()
             else:
-                arp = ArpShow(args.ipaddr, args.iface, namespace)
+                arp = ArpShow(args.ipaddr, args.iface, namespace, args.exclude_vlan)
                 arp.display()
 
             # Add a newline between namespaces for readability

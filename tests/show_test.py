@@ -1303,18 +1303,18 @@ class TestShow(object):
     @patch('show.main.run_command')
     def test_show_arp(self, mock_run_command):
         runner = CliRunner()
-        result = runner.invoke(show.cli.commands["arp"], ['0.0.0.0', '-if', 'Ethernet0', '--verbose'])
+        result = runner.invoke(show.cli.commands["arp"], ['0.0.0.0', '-if', 'Ethernet0', '--exclude-vlan', '--verbose'])
         assert result.exit_code == 0
         mock_run_command.assert_called_with(
-            ['nbrshow', '-4', '-ip', '0.0.0.0', '-if', 'Ethernet0', '-d', 'all'], display_cmd=True)
+            ['nbrshow', '-4', '-ip', '0.0.0.0', '-if', 'Ethernet0', '--exclude-vlan', '-d', 'all'], display_cmd=True)
 
     @patch('show.main.run_command')
     def test_show_ndp(self, mock_run_command):
         runner = CliRunner()
-        result = runner.invoke(show.cli.commands["ndp"], ['0.0.0.0', '-if', 'Ethernet0', '--verbose'])
+        result = runner.invoke(show.cli.commands["ndp"], ['0.0.0.0', '-if', 'Ethernet0', '--exclude-vlan', '--verbose'])
         assert result.exit_code == 0
         mock_run_command.assert_called_with(
-            ['nbrshow', '-6', '-ip', '0.0.0.0', '-if', 'Ethernet0', '-d', 'all'], display_cmd=True)
+            ['nbrshow', '-6', '-ip', '0.0.0.0', '-if', 'Ethernet0', '--exclude-vlan', '-d', 'all'], display_cmd=True)
 
     @patch('show.main.run_command')
     def test_show_arp_with_display_all(self, mock_run_command):
