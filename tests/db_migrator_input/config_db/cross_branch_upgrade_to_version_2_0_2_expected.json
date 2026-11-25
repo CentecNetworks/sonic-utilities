@@ -24,6 +24,6 @@
             "enabled": "no"
         },
     "DEVICE_METADATA|localhost": {
-        "docker_routing_config_mode": "separated"
+        "docker_routing_config_mode": "split-unified"
     }
 }
