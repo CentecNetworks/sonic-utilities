@@ -3103,6 +3103,12 @@ def add_portchannel(ctx, portchannel_name, min_links, fallback, fast_rate):
         if is_portchannel_present_in_db(db, portchannel_name):
             ctx.fail("{} already exists!".format(portchannel_name)) # TODO: MISSING CONSTRAINT IN YANG MODEL
 
+        intf_table = db.get_table('PORTCHANNEL_INTERFACE')
+        for intf_key in intf_table:
+            if ((type(intf_key) is str and intf_key == portchannel_name) or
+                (type(intf_key) is tuple and intf_key[0] == portchannel_name)):
+                ctx.fail("{} has interface ip configured, remove IP addresses assigned before deleting Portchannel!".format(portchannel_name))
+
     try:
         db.set_entry('PORTCHANNEL', portchannel_name, fvs)
     except ValueError:
