@@ -8731,6 +8731,11 @@ def remove_table(table_name, namespace):
     """
     config_db = ConfigDBConnector(namespace=namespace)
     config_db.connect()
+    acl_rule_keys = config_db.get_keys('ACL_RULE')
+    if acl_rule_keys:
+        for key in acl_rule_keys:
+            if table_name == key[0]:
+                config_db.set_entry("ACL_RULE", key, None)
     config_db.set_entry("ACL_TABLE", table_name, None)
 
 
