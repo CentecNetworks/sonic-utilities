@@ -2016,6 +2016,10 @@ def save(db, filename):
             config_db_file.flush()
             os.fsync(config_db_file.fileno())
 
+    # save frr configuration to default file /etc/frr/frr.conf
+    cmd = "write"
+    bgp_util.run_bgp_command(cmd)
+
 @config.command()
 @click.option('-y', '--yes', is_flag=True)
 @click.argument('filename', required=False)
@@ -6276,8 +6280,10 @@ def add_interface_ip(ctx, interface_name, ip_addr, gw, secondary):
         # Set the new row with new value
         if not gw:
             config_db.set_entry("MGMT_INTERFACE", (interface_name, str(ip_address)), {"NULL": "NULL"})
+            config_db.set_entry("MGMT_PORT", interface_name, {"admin_status": "up", "alias": interface_name})
         else:
             config_db.set_entry("MGMT_INTERFACE", (interface_name, str(ip_address)), {"gwaddr": gw})
+            config_db.set_entry("MGMT_PORT", interface_name, {"admin_status": "up", "alias": interface_name})
 
         return
 

@@ -70,6 +70,7 @@ class NbrBase(object):
         else:
             self.db = SonicV2Connector(host="127.0.0.1")
 
+        self.bridge_mac_list = []
         if exclude_vlan == False:
             self.if_name_map, self.if_oid_map = port_util.get_interface_oid_map(self.db)
             self.if_br_oid_map = port_util.get_bridge_port_map(self.db)
@@ -85,7 +86,6 @@ class NbrBase(object):
             @Todo, this code can be reused
         """
         self.db.connect(self.db.ASIC_DB)
-        self.bridge_mac_list = []
         vlan_id_dict = {}
 
         fdb_str = self.db.keys('ASIC_DB', "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY:*")
